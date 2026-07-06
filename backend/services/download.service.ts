@@ -17,6 +17,7 @@ import type {
 } from '../../src/shared/types'
 
 const MAX_CONCURRENT = 3
+const MOVE_RETRY_DELAYS_MS = [250, 500, 1000, 2000]
 
 export class DownloadService {
   private queue: DownloadItem[] = []
@@ -169,7 +170,7 @@ export class DownloadService {
         }
       }
 
-      fs.renameSync(tempPath, localPath)
+      await this.moveDownloadedFile(tempPath, localPath)
 
       // Remember the server content hash we just downloaded, so this mod is
       // considered in-sync until the server changes it again.
@@ -240,6 +241,37 @@ export class DownloadService {
       writer.on('error', reject)
       res.data.on('error', reject)
     })
+  }
+
+  private async moveDownloadedFile(tempPath: string, localPath: string): Promise<void> {
+    const retryableCodes = new Set(['EPERM', 'EACCES', 'EBUSY'])
+    let lastError: unknown
+
+    for (let attempt = 0; attempt <= MOVE_RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        fs.renameSync(tempPath, localPath)
+        return
+      } catch (err) {
+        lastError = err
+        const code = (err as NodeJS.ErrnoException).code
+        if (!code || !retryableCodes.has(code) || attempt === MOVE_RETRY_DELAYS_MS.length) break
+        await this.sleep(MOVE_RETRY_DELAYS_MS[attempt])
+      }
+    }
+
+    try {
+      fs.copyFileSync(tempPath, localPath)
+      fs.unlinkSync(tempPath)
+      return
+    } catch (copyErr) {
+      const original = lastError instanceof Error ? lastError.message : String(lastError)
+      const fallback = copyErr instanceof Error ? copyErr.message : String(copyErr)
+      throw new Error(`Ne mogu spremiti mod u mods folder. Zatvori igru/OneDrive sync i probaj opet. Rename: ${original}; Copy: ${fallback}`)
+    }
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   private async downloadViaHttpWithFallbacks(

@@ -1,7 +1,7 @@
 {
   "name": "sr-launcher-v2",
   "productName": "Slavonska Ravnica",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "SR Launcher V2 - Farming Simulator 25 Multiplayer Launcher",
   "main": "out/main/index.js",
   "author": "Slavonska Ravnica",
