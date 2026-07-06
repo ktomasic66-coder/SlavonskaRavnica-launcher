@@ -1,0 +1,22 @@
+[
+  {
+    "id": "sr-main",
+    "name": "Slavonska ravnica",
+    "ip": "176.57.169.250",
+    "port": 11363,
+    "maxPlayers": 12,
+    "connectionType": "ftp",
+    "webStatsPort": 8620,
+    "webApiCode": "oXuXiWxTnqiShUny"
+  },
+  {
+    "id": "sr-test",
+    "name": "Slavonska ravnica - test",
+    "ip": "51.89.3.249",
+    "port": 10000,
+    "maxPlayers": 4,
+    "connectionType": "ftp",
+    "webStatsPort": 8080,
+    "webApiCode": "e3dmikatjhjum55z2bxrg2hncvkl"
+  }
+]

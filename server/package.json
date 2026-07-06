@@ -1,0 +1,17 @@
+{
+  "name": "sr-launcher-backend",
+  "version": "1.0.0",
+  "description": "SR Launcher V2 - Auth & Config backend (Railway)",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
