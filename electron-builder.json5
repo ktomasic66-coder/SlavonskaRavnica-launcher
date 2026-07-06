@@ -48,8 +48,8 @@
   },
   publish: {
     provider: "github",
-    owner: "slavonska-ravnica",
-    repo: "sr-launcher-v2",
+    owner: "ktomasic66-coder",
+    repo: "SlavonskaRavnica-launcher",
     releaseType: "release"
   },
   npmRebuild: false,
