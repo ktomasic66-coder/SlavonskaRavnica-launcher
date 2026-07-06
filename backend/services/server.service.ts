@@ -144,7 +144,21 @@ interface ConfigServer {
   ip: string
   port: number
   maxPlayers: number
+  map?: string
+  version?: string
   connectionType: 'ftp' | 'sftp' | 'rest'
+  ftpHost?: string
+  ftpPort?: number
+  ftpUsername?: string
+  ftpPassword?: string
+  ftpPath?: string
+  sftpHost?: string
+  sftpPort?: number
+  sftpUsername?: string
+  sftpPassword?: string
+  sftpPath?: string
+  apiUrl?: string
+  apiKey?: string
   webStatsPort: number
   webApiCode: string
 }
@@ -159,12 +173,20 @@ export function upsertServersFromConfig(servers: ConfigServer[]): void {
   const db = getDb()
   const existsStmt = db.prepare('SELECT id FROM servers WHERE id = ?')
   const insertStmt = db.prepare(`
-    INSERT INTO servers (id, name, ip, port, max_players, connection_type, web_stats_port, web_api_code, is_active)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+    INSERT INTO servers (
+      id, name, ip, port, max_players, map, version, connection_type,
+      ftp_host, ftp_port, ftp_username, ftp_password, ftp_path,
+      sftp_host, sftp_port, sftp_username, sftp_password, sftp_path,
+      api_url, api_key, web_stats_port, web_api_code, is_active
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
   `)
   const updateStmt = db.prepare(`
-    UPDATE servers SET name = ?, ip = ?, port = ?, max_players = ?, connection_type = ?,
-      web_stats_port = ?, web_api_code = ?, updated_at = datetime('now')
+    UPDATE servers SET
+      name = ?, ip = ?, port = ?, max_players = ?, map = ?, version = ?, connection_type = ?,
+      ftp_host = ?, ftp_port = ?, ftp_username = ?, ftp_password = ?, ftp_path = ?,
+      sftp_host = ?, sftp_port = ?, sftp_username = ?, sftp_password = ?, sftp_path = ?,
+      api_url = ?, api_key = ?, web_stats_port = ?, web_api_code = ?, updated_at = datetime('now')
     WHERE id = ?
   `)
 
@@ -172,9 +194,19 @@ export function upsertServersFromConfig(servers: ConfigServer[]): void {
     for (const s of items) {
       const exists = existsStmt.get(s.id)
       if (exists) {
-        updateStmt.run(s.name, s.ip, s.port, s.maxPlayers, s.connectionType, s.webStatsPort, s.webApiCode, s.id)
+        updateStmt.run(
+          s.name, s.ip, s.port, s.maxPlayers, s.map || '', s.version || '', s.connectionType,
+          s.ftpHost || '', s.ftpPort || 21, s.ftpUsername || '', s.ftpPassword || '', s.ftpPath || '/mods',
+          s.sftpHost || '', s.sftpPort || 22, s.sftpUsername || '', s.sftpPassword || '', s.sftpPath || '/mods',
+          s.apiUrl || '', s.apiKey || '', s.webStatsPort || 8080, s.webApiCode || '', s.id
+        )
       } else {
-        insertStmt.run(s.id, s.name, s.ip, s.port, s.maxPlayers, s.connectionType, s.webStatsPort, s.webApiCode)
+        insertStmt.run(
+          s.id, s.name, s.ip, s.port, s.maxPlayers, s.map || '', s.version || '', s.connectionType,
+          s.ftpHost || '', s.ftpPort || 21, s.ftpUsername || '', s.ftpPassword || '', s.ftpPath || '/mods',
+          s.sftpHost || '', s.sftpPort || 22, s.sftpUsername || '', s.sftpPassword || '', s.sftpPath || '/mods',
+          s.apiUrl || '', s.apiKey || '', s.webStatsPort || 8080, s.webApiCode || ''
+        )
       }
     }
     // Make the local server list match the backend exactly: remove any servers

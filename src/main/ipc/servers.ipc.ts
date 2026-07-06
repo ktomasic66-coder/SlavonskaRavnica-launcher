@@ -6,14 +6,27 @@ import {
   updateServer,
   deleteServer,
   setActiveServer,
-  pingServer
+  pingServer,
+  upsertServersFromConfig
 } from '../../../backend/services/server.service'
+import { backendAuthService } from '../../../backend/services/backend-auth.service'
+import { discordService } from '../../../backend/services/discord.service'
 import { logService } from '../../../backend/services/log.service'
+import { isBackendMode } from '../../../src/shared/app-config'
 import type { IPCResponse, GameServer } from '../../../src/shared/types'
+
+async function syncBackendServers(): Promise<void> {
+  if (!isBackendMode()) return
+  const token = discordService.loadSession()?.user.accessToken
+  if (!token) return
+  const servers = await backendAuthService.fetchConfig(token)
+  upsertServersFromConfig(servers)
+}
 
 export function registerServerHandlers(): void {
   ipcMain.handle('servers:get-all', async (): Promise<IPCResponse<GameServer[]>> => {
     try {
+      await syncBackendServers()
       const servers = getAllServers()
       return { success: true, data: servers }
     } catch (err) {
@@ -24,6 +37,7 @@ export function registerServerHandlers(): void {
 
   ipcMain.handle('servers:get-active', async (): Promise<IPCResponse<GameServer | null>> => {
     try {
+      await syncBackendServers()
       const server = getActiveServer()
       return { success: true, data: server }
     } catch (err) {
@@ -44,7 +58,17 @@ export function registerServerHandlers(): void {
 
   ipcMain.handle('servers:update', async (_event, id: string, data: Partial<GameServer>): Promise<IPCResponse<GameServer>> => {
     try {
-      const server = updateServer(id, data)
+      let server = updateServer(id, data)
+      if (isBackendMode()) {
+        const token = discordService.loadSession()?.user.accessToken
+        if (token) {
+          await backendAuthService.saveServerConfig(token, id, server)
+          const servers = await backendAuthService.fetchConfig(token)
+          upsertServersFromConfig(servers)
+          server = getAllServers().find((s) => s.id === id) || server
+          logService.success('CONFIG', `Server spremljen na backend: ${server.name}`)
+        }
+      }
       return { success: true, data: server }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Greška ažuriranja servera'

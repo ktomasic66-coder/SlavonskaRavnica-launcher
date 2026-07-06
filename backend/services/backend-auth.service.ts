@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import axios from 'axios'
 import { BACKEND_URL } from '../../src/shared/app-config'
 import { logService } from './log.service'
-import type { DiscordUser } from '../../src/shared/types'
+import type { DiscordUser, GameServer } from '../../src/shared/types'
 
 interface BackendProfile {
   id: string
@@ -31,7 +31,21 @@ interface BackendConfigServer {
   ip: string
   port: number
   maxPlayers: number
+  map?: string
+  version?: string
   connectionType: 'ftp' | 'sftp' | 'rest'
+  ftpHost?: string
+  ftpPort?: number
+  ftpUsername?: string
+  ftpPassword?: string
+  ftpPath?: string
+  sftpHost?: string
+  sftpPort?: number
+  sftpUsername?: string
+  sftpPassword?: string
+  sftpPath?: string
+  apiUrl?: string
+  apiKey?: string
   webStatsPort: number
   webApiCode: string
 }
@@ -134,6 +148,15 @@ export class BackendAuthService {
       logService.warning('CONFIG', `Ne mogu dohvatiti config s backenda: ${msg}`)
       return []
     }
+  }
+
+  async saveServerConfig(token: string, id: string, server: Partial<GameServer>): Promise<BackendConfigServer> {
+    const base = BACKEND_URL.replace(/\/$/, '')
+    const res = await axios.put(`${base}/admin/servers/${encodeURIComponent(id)}`, server, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000
+    })
+    return res.data.server as BackendConfigServer
   }
 
   private toSession(profile: BackendProfile, token: string): { user: DiscordUser; hasRole: boolean; canUpload: boolean } {

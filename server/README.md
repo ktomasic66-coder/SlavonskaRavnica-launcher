@@ -6,7 +6,8 @@ Mali auth + config servis. Drzi sve tajne server-side. Igracki launcher zna samo
 
 - OAuth token exchange s Discordom
 - Provjera Discord role preko korisnikovog tokena
-- Servira centralni config servera iz `servers.json`
+- Servira centralni config servera iz Render Postgres baze
+- Admin iz launchera moze spremiti izmjene servera/FTP podataka na backend
 
 ## Deploy na Render
 
@@ -26,6 +27,7 @@ Mali auth + config servis. Drzi sve tajne server-side. Igracki launcher zna samo
    DISCORD_BOT_TOKEN
    JWT_SECRET
    PUBLIC_URL=https://sr-launcher-backend.onrender.com
+   DATABASE_URL=<Internal Database URL iz Render Postgres baze>
    ```
 4. U Discord Developer Portal dodaj redirect:
    ```text
@@ -42,6 +44,14 @@ https://sr-launcher-backend.onrender.com/health
 
 Trebas vidjeti JSON odgovor s `ok: true`.
 
-## Mijenjanje servera
+## Mijenjanje servera i FTP podataka
 
-Uredi `servers.json` i pushaj. Render auto-deploy salje novi config svim igracima bez novog `.exe`, dok god launcher vec koristi isti backend URL.
+Kad je `DATABASE_URL` postavljen, backend automatski napravi tablicu `launcher_servers`.
+Prvi put ce napuniti bazu iz `servers.json` ako je tablica prazna.
+
+Admin u launcheru otvori **Serveri > Uredi Server**, promijeni IP, port, FTP host,
+FTP username/password, remote path ili Web API code i klikne **Spremi Izmjene**.
+Launcher salje izmjenu na backend, backend je sprema u Postgres, a drugi korisnici
+dobiju novi config kad se launcher prijavi/provjeri sesiju ili kad se osvjezi lista servera.
+
+Ako `DATABASE_URL` nije postavljen, backend se vraca na stari fallback i cita/pise `servers.json`.
